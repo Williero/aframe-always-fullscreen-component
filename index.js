@@ -33,7 +33,9 @@ AFRAME.registerComponent('always-fullscreen', {
     if (!platform) {
       throw new Error("Platform dependency is not available");
     }
+  },
 
+  update: function (oldData) {
     if (platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) {
       // If we are on iOS do the magic...
 
@@ -50,11 +52,6 @@ AFRAME.registerComponent('always-fullscreen', {
         this.makeFullscreenMask();
       }
     }
-
-  },
-
-  update: function (oldData) {
-
   },
 
   remove: function () {
