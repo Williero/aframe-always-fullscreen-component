@@ -1,0 +1,1 @@
+# aframe-always-fullscreen-component
