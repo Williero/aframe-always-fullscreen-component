@@ -26,10 +26,7 @@ AFRAME.registerComponent('always-fullscreen', {
   init: function () {
     this.mask = this.mask.bind(this);
     this.initialize = this.initialize.bind(this);
-    this.orientationChange = this.orientationChange.bind(this);
-
-    // A-FRAME changes clientWidth during Rendering - So we need to get that Factor and apply it.
-    this.changeFactor = initialClientWidth / document.body.clientWidth;
+    this.updateMasks = this.updateMasks.bind(this);
 
     if (!platform) {
       throw new Error("Platform dependency is not available");
@@ -46,21 +43,14 @@ AFRAME.registerComponent('always-fullscreen', {
 
   initialize: function() {
     if (platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) {
-      // If we are on iOS do the magic...
-
       window.addEventListener("scroll", this.mask);
-      window.addEventListener("orientationchange", this.orientationChange);
+      window.addEventListener("orientationchange", this.updateMasks);
 
       this.makeTreadmill();
       this.makeMask();
-      this.mask();
-
-    } else {
-      // If we are NOT on iOS, go Fullscreen with the Fullscreen API
-      if (this.data.platform === 'all' || (this.data.platform === 'mobile' && this.el.sceneEl.isMobile) || (this.data.platform === 'desktop' && !this.el.sceneEl.isMobile)) {
-        this.makeFullscreenMask();
-      }
     }
+
+    this.updateMasks();
   },
 
   remove: function () {
@@ -88,14 +78,12 @@ AFRAME.registerComponent('always-fullscreen', {
   makeTreadmill: function () {
     var treadmill = document.querySelector('#treadmill');
 
-    if (treadmill) {
-      throw new Error('There is an existing treadmill element.');
+    if (!treadmill) {
+      treadmill = document.createElement('div');
+      treadmill.id = 'treadmill';
+
+      document.body.appendChild(treadmill);
     }
-
-    treadmill = document.createElement('div');
-    treadmill.id = 'treadmill';
-
-    document.body.appendChild(treadmill);
 
     treadmill.style.visibility = 'hidden';
     treadmill.style.position = 'relative';
@@ -111,14 +99,12 @@ AFRAME.registerComponent('always-fullscreen', {
   makeFullscreenMask: function () {
     var fullscreenMask = document.querySelector('#fullscreenmask');
 
-    if (fullscreenMask) {
-      throw new Error('There is an existing fullscreenmask element.');
+    if (!fullscreenMask) {
+      fullscreenMask = document.createElement('div');
+      fullscreenMask.id = 'fullscreenmask';
+
+      document.body.appendChild(fullscreenMask);
     }
-
-    fullscreenMask = document.createElement('div');
-    fullscreenMask.id = 'fullscreenmask';
-
-    document.body.appendChild(fullscreenMask);
 
     fullscreenMask.style.position = 'fixed';
     fullscreenMask.style.zIndex = 9999999999;
@@ -227,9 +213,16 @@ AFRAME.registerComponent('always-fullscreen', {
     return window.orientation === 0 || window.orientation === 180 ? 'portrait' : 'landscape';
   },
 
-  orientationChange: function() {
+  updateMasks: function() {
     // A-FRAME changes clientWidth during Rendering - So we need to get that Factor and apply it.
     this.changeFactor = initialClientWidth / document.body.clientWidth;
-    this.mask();
+
+    if (platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) {
+      // If we are on iOS do the magic...
+      this.mask();
+    } else if (this.data.platform === 'all' || (this.data.platform === 'mobile' && this.el.sceneEl.isMobile) || (this.data.platform === 'desktop' && !this.el.sceneEl.isMobile)) {
+      // If we are NOT on iOS, go Fullscreen with the Fullscreen API
+      this.makeFullscreenMask();
+    }
   }
 });
