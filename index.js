@@ -25,6 +25,7 @@ AFRAME.registerComponent('always-fullscreen', {
 
   init: function () {
     this.mask = this.mask.bind(this);
+    this.initialize = this.initialize.bind(this);
     this.orientationChange = this.orientationChange.bind(this);
 
     // A-FRAME changes clientWidth during Rendering - So we need to get that Factor and apply it.
@@ -36,6 +37,14 @@ AFRAME.registerComponent('always-fullscreen', {
   },
 
   update: function (oldData) {
+    if (this.el.sceneEl.hasLoaded) {
+      this.initialize();
+    } else {
+      this.el.sceneEl.addEventListener("loaded", this.initialize);
+    }
+  },
+
+  initialize: function() {
     if (platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) {
       // If we are on iOS do the magic...
 
