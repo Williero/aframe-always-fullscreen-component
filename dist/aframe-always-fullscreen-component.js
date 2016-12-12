@@ -65,7 +65,8 @@
 	      oneOf: [
 	          'mobile', 'desktop', 'all'
 	      ]
-	    }
+	    },
+	    debug: {default:false}
 	  },
 
 	  init: function () {
@@ -199,8 +200,17 @@
 	    var windowHeight = window.innerHeight;
 	    var zoom = Math.ceil(document.body.clientWidth / window.innerWidth * 10) / 10;
 
+	    if (this.data.debug) {
+	      console.log("Initial Client-Width: " + initialClientWidth);
+	      console.log("window.innerHeight: " + windowHeight);
+	      console.log("Zoom: " + zoom);
+	      console.log("Change-Factor: " + this.changeFactor);
+	      console.log("Minimal-ViewHeight: " + this.getMinimalViewHeight());
+	      console.log("Minimal-ViewHeight AfterFactor: " + Math.round(this.getMinimalViewHeight() / this.changeFactor));
+	    }
+
 	    //console.log("innerHeight:" + window.innerHeight + " Zoom:" + zoom + " (" + document.body.clientWidth + "/" + window.innerWidth + ")" + " Result:" + windowHeight * zoom + " MinimalViewHeight:" + getMinimalViewHeight());
-	    return !((windowHeight * zoom) < Math.round(this.getMinimalViewHeight()));
+	    return !((windowHeight * zoom) < Math.round(this.getMinimalViewHeight() / this.changeFactor));
 	  },
 
 	  getMinimalViewHeight: function () {
@@ -228,7 +238,7 @@
 	    }
 
 	    if (orientation === 'portrait') {
-	      return spec[index][0] / this.changeFactor;
+	      return spec[index][0];
 	    } else {
 	      return spec[index][1];
 	    }
