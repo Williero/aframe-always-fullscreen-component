@@ -200,7 +200,7 @@
 	    var zoom = Math.ceil(document.body.clientWidth / window.innerWidth * 10) / 10;
 
 	    //console.log("innerHeight:" + window.innerHeight + " Zoom:" + zoom + " (" + document.body.clientWidth + "/" + window.innerWidth + ")" + " Result:" + windowHeight * zoom + " MinimalViewHeight:" + getMinimalViewHeight());
-	    return !((windowHeight * zoom) < (this.getMinimalViewHeight() / this.changeFactor));
+	    return !((windowHeight * zoom) < Math.round(this.getMinimalViewHeight() / this.changeFactor));
 	  },
 
 	  getMinimalViewHeight: function () {
