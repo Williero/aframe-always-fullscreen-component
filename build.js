@@ -68327,7 +68327,7 @@
 	    var zoom = Math.ceil(document.body.clientWidth / window.innerWidth * 10) / 10;
 
 	    //console.log("innerHeight:" + window.innerHeight + " Zoom:" + zoom + " (" + document.body.clientWidth + "/" + window.innerWidth + ")" + " Result:" + windowHeight * zoom + " MinimalViewHeight:" + getMinimalViewHeight());
-	    return !((windowHeight * zoom) < Math.round(this.getMinimalViewHeight() / this.changeFactor));
+	    return !((windowHeight * zoom) < Math.round(this.getMinimalViewHeight()));
 	  },
 
 	  getMinimalViewHeight: function () {
@@ -68355,7 +68355,7 @@
 	    }
 
 	    if (orientation === 'portrait') {
-	      return spec[index][0];
+	      return spec[index][0] / this.changeFactor;
 	    } else {
 	      return spec[index][1];
 	    }
