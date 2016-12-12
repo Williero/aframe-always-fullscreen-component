@@ -68198,6 +68198,7 @@
 
 	  init: function () {
 	    this.mask = this.mask.bind(this);
+	    this.orientationChange = this.orientationChange.bind(this);
 
 	    // A-FRAME changes clientWidth during Rendering - So we need to get that Factor and apply it.
 	    this.changeFactor = initialClientWidth / document.body.clientWidth;
@@ -68210,7 +68211,7 @@
 	      // If we are on iOS do the magic...
 
 	      window.addEventListener("scroll", this.mask);
-	      window.addEventListener("orientationchange", this.mask);
+	      window.addEventListener("orientationchange", this.orientationChange);
 
 	      this.makeTreadmill();
 	      this.makeMask();
@@ -68342,7 +68343,7 @@
 
 	  getMinimalViewHeight: function () {
 
-	    var orientation = window.orientation === 0 || window.orientation === 180 ? 'portrait' : 'landscape';
+	    var orientation = this.getOrientation();
 
 	    // innerHeight in Minimal portrait, landscape, ScreenWidth, Height, Model
 	    var spec = [
@@ -68387,6 +68388,16 @@
 	    if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
 	      requestFullScreen.call(docEl);
 	    }
+	  },
+
+	  getOrientation: function() {
+	    return window.orientation === 0 || window.orientation === 180 ? 'portrait' : 'landscape';
+	  },
+
+	  orientationChange: function() {
+	    // A-FRAME changes clientWidth during Rendering - So we need to get that Factor and apply it.
+	    this.changeFactor = initialClientWidth / document.body.clientWidth;
+	    this.mask();
 	  }
 	});
 
