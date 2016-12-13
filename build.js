@@ -68200,6 +68200,9 @@
 	    this.mask = this.mask.bind(this);
 	    this.initialize = this.initialize.bind(this);
 	    this.updateMasks = this.updateMasks.bind(this);
+	    this.resizeHandler = this.resizeHandler.bind(this);
+	    this.orientationChangeHandler = this.orientationChangeHandler.bind(this);
+	    this.orientationChangeHelper = this.orientationChangeHelper.bind(this);
 
 	    if (!platform) {
 	      throw new Error("Platform dependency is not available");
@@ -68215,12 +68218,20 @@
 	  },
 
 	  initialize: function() {
-	    if (platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) {
-	      window.addEventListener("scroll", this.mask);
-	      window.addEventListener("orientationchange", this.updateMasks);
+
+	    if ((platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) && (this.data.platform === 'all' || (this.data.platform === 'mobile' && this.el.sceneEl.isMobile))) {
 
 	      this.makeTreadmill();
 	      this.makeMask();
+
+	      window.addEventListener("resize", this.resizeHandler);
+	      window.addEventListener("orientationchange", this.orientationChangeHandler);
+
+	    } else if (this.data.platform === 'all' || (this.data.platform === 'mobile' && this.el.sceneEl.isMobile) || (this.data.platform === 'desktop' && !this.el.sceneEl.isMobile)) {
+
+	      // If we are NOT on iOS, go Fullscreen with the Fullscreen API
+	      this.makeFullscreenMask();
+
 	    }
 
 	    this.updateMasks();
@@ -68272,47 +68283,84 @@
 	  makeFullscreenMask: function () {
 	    var fullscreenMask = document.querySelector('#fullscreenmask');
 
-	    if (!fullscreenMask) {
-	      fullscreenMask = document.createElement('div');
-	      fullscreenMask.id = 'fullscreenmask';
+	    if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+	      if (!fullscreenMask) {
+	        fullscreenMask = document.createElement('div');
+	        fullscreenMask.id = 'fullscreenmask';
 
-	      document.body.appendChild(fullscreenMask);
+	        document.body.appendChild(fullscreenMask);
+
+	        fullscreenMask.addEventListener("click", this.enterFullScreen);
+	      }
+
+	      fullscreenMask.style.position = 'fixed';
+	      fullscreenMask.style.zIndex = 9999999999;
+	      fullscreenMask.style.top = 0;
+	      fullscreenMask.style.left = 0;
+	      fullscreenMask.style.display = 'block';
+	      fullscreenMask.style.width = window.innerWidth + 'px';
+	      fullscreenMask.style.height = window.innerHeight + 'px';
+	      fullscreenMask.style.backgroundColor = '#663399';
 	    }
-
-	    fullscreenMask.style.position = 'fixed';
-	    fullscreenMask.style.zIndex = 9999999999;
-	    fullscreenMask.style.top = 0;
-	    fullscreenMask.style.left = 0;
-	    fullscreenMask.style.display = 'block';
-	    fullscreenMask.style.width = window.innerWidth + 'px';
-	    fullscreenMask.style.height = window.innerHeight + 'px';
-	    fullscreenMask.style.backgroundColor = '#663399';
-
-	    fullscreenMask.addEventListener("click", this.enterFullScreen);
-	  },
-
-	  repaintElement: function (element) {
-	    element.style.webkitTransform = 'translateZ(0)';
-
-	    element.style.display = 'none';
-	    element.style.display = 'block';
 	  },
 
 	  mask: function () {
 	    var mask = document.querySelector('#mask');
+	    var treadmill = document.querySelector('#treadmill');
 
 	    if (this.isMinimalView()) {
-	      mask.style.display = 'none';
+
+	      if (mask && mask.style.display != 'none') {
+	        mask.style.display = 'none';
+	      }
+
+	      if (treadmill) {
+	        treadmill.style.display = 'none';
+	      }
+
 	      window.scrollTo(0, 0);
 	      this.el.style.height = window.innerHeight;
 	      this.el.sceneEl.resize();
+
 	    } else {
-	      mask.style.display = 'block';
 
-	      mask.style.width = window.innerWidth + 'px';
-	      mask.style.height = window.innerHeight * 2 + 'px';
+	      if (mask) {
 
-	      this.repaintElement(mask);
+	        mask.style.display = 'block';
+
+	        mask.style.width = window.innerWidth + 'px';
+	        mask.style.height = window.innerHeight * 2 * this.changeFactor + 'px';
+
+	        if (treadmill) {
+	          treadmill.style.display = 'block';
+	        }
+
+	      } else {
+	        // TODO Show the re-enable-Button (when cancel button has been hit)
+	      }
+
+	    }
+
+	    if (this.data.debug) {
+	      mask.innerText = " Height: " + window.innerHeight + " Min: " + this.getMinimalViewHeight() + " Min-AF: " + Math.round(this.getMinimalViewHeight() / this.changeFactor);
+	    }
+
+	  },
+
+	  fullscreenMask: function() {
+	    var fullscreenMask = document.querySelector('#fullscreenmask');
+
+	    if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+	      if (fullscreenMask) {
+	        fullscreenMask.style.display = 'block';
+
+	        fullscreenMask.style.width = window.innerWidth + 'px';
+	        fullscreenMask.style.height = window.innerHeight + 'px';
+	      } else {
+	        // TODO Show the re-enable-Button
+	      }
+	    } else if (fullscreenMask) {
+	      fullscreenMask.parentNode.removeChild(fullscreenMask);
 	    }
 	  },
 
@@ -68329,8 +68377,14 @@
 	      console.log("Minimal-ViewHeight AfterFactor: " + Math.round(this.getMinimalViewHeight() / this.changeFactor));
 	    }
 
-	    //console.log("innerHeight:" + window.innerHeight + " Zoom:" + zoom + " (" + document.body.clientWidth + "/" + window.innerWidth + ")" + " Result:" + windowHeight * zoom + " MinimalViewHeight:" + getMinimalViewHeight());
-	    return !((windowHeight * zoom) < Math.round(this.getMinimalViewHeight() / this.changeFactor));
+	    var currentHeight = windowHeight * zoom;
+	    var minimalViewHeight = Math.round(this.getMinimalViewHeight() / this.changeFactor);
+
+	    // Give it a 20px Threshold, because Chrome on iOS keeps the small Bar in Landscape-Mode
+	    // But it's only necessary on Landscape
+	    minimalViewHeight = this.getOrientation() === 'portrait' ? minimalViewHeight : minimalViewHeight - 20;
+
+	    return !(currentHeight < minimalViewHeight);
 	  },
 
 	  getMinimalViewHeight: function () {
@@ -68384,20 +68438,91 @@
 
 	  getOrientation: function() {
 	    return window.orientation === 0 || window.orientation === 180 ? 'portrait' : 'landscape';
+	    //return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
 	  },
 
 	  updateMasks: function() {
 	    // A-FRAME changes clientWidth during Rendering - So we need to get that Factor and apply it.
 	    this.changeFactor = initialClientWidth / document.body.clientWidth;
 
-	    if (platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) {
+	    if ((platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) && (this.data.platform === 'all' || (this.data.platform === 'mobile' && this.el.sceneEl.isMobile))) {
 	      // If we are on iOS do the magic...
 	      this.mask();
 	    } else if (this.data.platform === 'all' || (this.data.platform === 'mobile' && this.el.sceneEl.isMobile) || (this.data.platform === 'desktop' && !this.el.sceneEl.isMobile)) {
 	      // If we are NOT on iOS, go Fullscreen with the Fullscreen API
-	      this.makeFullscreenMask();
+	      this.fullscreenMask();
 	    }
+	  },
+
+	  resizeHandler: function() {
+
+	    // This is so that we do things when scrolling ended
+	    if (this.resizeTimeout) {
+	      window.clearTimeout(this.resizeTimeout);
+	    }
+
+	    this.resizeTimeout = window.setTimeout(this.mask, 50);
+	  },
+
+	  orientationChangeHandler: function() {
+
+	    this.orientationChangeHelper();
+
+	    // TODO: Resize-Handler should not run on orientation-change,
+	    // but the following code seems useless
+	    if (this.resizeTimeout) {
+	      window.clearTimeout(this.resizeTimeout);
+	    }
+
+	    if (this.orientationTimeout) {
+	      window.clearTimeout(this.orientationTimeout);
+	    }
+
+	    this.orientationTimeout = window.setTimeout(this.updateMasks, 500);
+
+	  },
+
+	  orientationChangeHelper: function () {
+
+	    if ((this.lastInnerWidth && this.lastInnerHeight) && window.innerWidth === this.lastInnerWidth && window.innerHeight === this.lastInnerHeight) {
+	      this.noChangeCount = this.noChangeCount ? this.noChangeCount + 1 : 1;
+
+	      if (this.noChangeCount >= 50) {
+	        if (this.orientationTimeout) {
+	          window.clearTimeout(this.orientationTimeout);
+	        }
+	        if (this.orientationChangeHelperTimout) {
+	          window.clearTimeout(this.orientationChangeHelperTimout);
+	        }
+
+	        if (this.data.debug) {
+	          console.log("Updating Masks after Orientation-Change due to Count.")
+	        }
+
+	        this.noChangeCount = 1;
+
+	        this.updateMasks();
+	      } else {
+
+	        if (this.orientationChangeHelperTimout) {
+	          window.clearTimeout(this.orientationChangeHelperTimout);
+	        }
+
+	        this.orientationChangeHelperTimout = window.setTimeout(this.orientationChangeHelper, 1);
+	      }
+	    } else {
+	      if (this.orientationChangeHelperTimout) {
+	        window.clearTimeout(this.orientationChangeHelperTimout);
+	      }
+
+	      this.orientationChangeHelperTimout = window.setTimeout(this.orientationChangeHelper, 10);
+	    }
+
+	    this.lastInnerWidth = window.innerWidth;
+	    this.lastInnerHeight = window.innerHeight;
+
 	  }
+
 	});
 
 
