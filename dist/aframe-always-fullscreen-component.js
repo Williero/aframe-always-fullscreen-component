@@ -76,6 +76,7 @@
 	    this.resizeHandler = this.resizeHandler.bind(this);
 	    this.orientationChangeHandler = this.orientationChangeHandler.bind(this);
 	    this.orientationChangeHelper = this.orientationChangeHelper.bind(this);
+	    this.cancel = this.cancel.bind(this);
 
 	    if (!platform) {
 	      throw new Error("Platform dependency is not available");
@@ -92,6 +93,14 @@
 
 	  initialize: function() {
 
+	    var fullscreenButton = document.querySelector('#fullscreenbutton');
+
+	    if (fullscreenButton) {
+	      fullscreenButton.parentNode.removeChild(fullscreenButton);
+	    }
+
+	    this.removeEventListeners();
+
 	    if ((platform.os.family == 'iOS' && parseInt(platform.os.version, 10) > 8 || platform.ua.indexOf('like Mac OS X') != -1) && (this.data.platform === 'all' || (this.data.platform === 'mobile' && this.el.sceneEl.isMobile))) {
 
 	      this.makeTreadmill();
@@ -105,13 +114,55 @@
 	      // If we are NOT on iOS, go Fullscreen with the Fullscreen API
 	      this.makeFullscreenMask();
 
+	      document.addEventListener("webkitfullscreenchange", this.updateMasks);
+	      document.addEventListener("mozfullscreenchange", this.updateMasks);
+	      document.addEventListener("msfullscreenchange", this.updateMasks);
+	      document.addEventListener("webkitfullscreenchange", this.updateMasks);
 	    }
 
 	    this.updateMasks();
+
+	  },
+
+	  removeEventListeners: function() {
+	    window.removeEventListener("resize", this.resizeHandler);
+	    window.removeEventListener("orientationchange", this.orientationChangeHandler);
+	    document.removeEventListener("webkitfullscreenchange", this.updateMasks);
+	    document.removeEventListener("mozfullscreenchange", this.updateMasks);
+	    document.removeEventListener("msfullscreenchange", this.updateMasks);
+	    document.removeEventListener("webkitfullscreenchange", this.updateMasks);
 	  },
 
 	  remove: function () {
+	    var mask = document.querySelector('#mask');
 
+	    if (mask) {
+	      mask.parentNode.removeChild(mask);
+	    }
+
+	    var treadmill = document.querySelector('#treadmill');
+
+	    if (treadmill) {
+	      treadmill.parentNode.removeChild(treadmill);
+	    }
+
+	    var fullscreenMask = document.querySelector('#fullscreenmask');
+
+	    if (fullscreenMask) {
+	      fullscreenMask.parentNode.removeChild(fullscreenMask);
+	    }
+
+	    var fullscreenButton = document.querySelector('#fullscreenbutton');
+
+	    if (fullscreenButton) {
+	      fullscreenButton.parentNode.removeChild(fullscreenMask);
+	    }
+
+	    this.removeEventListeners();
+
+	    window.scrollTo(0, 0);
+	    this.el.style.height = '100%';
+	    this.el.sceneEl.resize();
 	  },
 
 	  makeMask: function () {
@@ -130,6 +181,8 @@
 	    mask.style.left = 0;
 	    mask.style.display = 'none';
 	    mask.style.backgroundColor = '#663399';
+
+	    this.appendCancelButton(mask);
 	  },
 
 	  makeTreadmill: function () {
@@ -146,6 +199,7 @@
 	    treadmill.style.position = 'relative';
 	    treadmill.style.zIndex = 10;
 	    treadmill.style.left = 0;
+	    treadmill.style.display = 'block';
 
 	    // Why make it such a large number?
 	    // Huge body height makes the size and position of the scrollbar fixed.
@@ -174,7 +228,49 @@
 	      fullscreenMask.style.width = window.innerWidth + 'px';
 	      fullscreenMask.style.height = window.innerHeight + 'px';
 	      fullscreenMask.style.backgroundColor = '#663399';
+
+	      this.appendCancelButton(fullscreenMask);
 	    }
+	  },
+
+	  makeFullscreenButton: function() {
+	    var fullscreenButton = document.querySelector('#fullscreenbutton');
+
+	    if (!fullscreenButton) {
+	      fullscreenButton = document.createElement('button');
+	      fullscreenButton.id = 'fullscreenbutton';
+
+	      var container = document.querySelector("div.a-enter-vr");
+
+	      if (!container) {
+	        var container = document.createElement('div');
+	        container.className = 'a-enter-vr';
+	      }
+
+	      container.appendChild(fullscreenButton);
+
+	      fullscreenButton.addEventListener("click", this.initialize);
+	    }
+
+	    var marginRight = 5;
+	    var height = '10vh';
+	    var width = '10vh';
+
+	    var enterVRButton = document.querySelector("button.a-enter-vr-button");
+
+	    if (enterVRButton) {
+	      marginRight = marginRight + enterVRButton.offsetWidth;
+	      width = enterVRButton.offsetWidth;
+	      height = enterVRButton.offsetHeight;
+	    }
+
+	    fullscreenButton.style.position = 'absolute';
+	    fullscreenButton.style.zIndex = 9999;
+	    fullscreenButton.style.bottom = 0;
+	    fullscreenButton.style.right = marginRight + 'px';
+	    fullscreenButton.style.display = 'block';
+	    fullscreenButton.style.width = width;
+	    fullscreenButton.style.height = height;
 	  },
 
 	  mask: function () {
@@ -209,14 +305,14 @@
 	        }
 
 	      } else {
-	        // TODO Show the re-enable-Button (when cancel button has been hit)
+	        this.makeFullscreenButton();
 	      }
 
 	    }
 
-	    if (this.data.debug) {
-	      mask.innerText = " Height: " + window.innerHeight + " Min: " + this.getMinimalViewHeight() + " Min-AF: " + Math.round(this.getMinimalViewHeight() / this.changeFactor);
-	    }
+	    /*if (this.data.debug) {
+	      mask.innerHTML += "<p> Height: " + window.innerHeight + " Min: " + this.getMinimalViewHeight() + " Min-AF: " + Math.round(this.getMinimalViewHeight() / this.changeFactor) + "</p>";
+	    }*/
 
 	  },
 
@@ -230,7 +326,7 @@
 	        fullscreenMask.style.width = window.innerWidth + 'px';
 	        fullscreenMask.style.height = window.innerHeight + 'px';
 	      } else {
-	        // TODO Show the re-enable-Button
+	        this.makeFullscreenButton();
 	      }
 	    } else if (fullscreenMask) {
 	      fullscreenMask.parentNode.removeChild(fullscreenMask);
@@ -293,12 +389,6 @@
 	  },
 
 	  enterFullScreen: function() {
-	    var fullscreenMask = document.querySelector('#fullscreenmask');
-
-	    if (fullscreenMask) {
-	      fullscreenMask.parentNode.removeChild(fullscreenMask);
-	    }
-
 	    var doc = window.document;
 	    var docEl = doc.documentElement;
 
@@ -334,7 +424,11 @@
 	      window.clearTimeout(this.resizeTimeout);
 	    }
 
-	    this.resizeTimeout = window.setTimeout(this.mask, 50);
+	    this.resizeTimeout = window.setTimeout(this.updateMasks, 50);
+
+	    if (this.data.debug) {
+	      console.log("Resize Event");
+	    }
 	  },
 
 	  orientationChangeHandler: function() {
@@ -394,6 +488,26 @@
 	    this.lastInnerWidth = window.innerWidth;
 	    this.lastInnerHeight = window.innerHeight;
 
+	  },
+
+	  cancel: function(evt) {
+	    if (typeof evt.stopPropagation == "function") {
+	      evt.stopPropagation();
+	    } else {
+	      evt.cancelBubble = true;
+	    }
+
+	    this.remove();
+	    this.makeFullscreenButton();
+	  },
+
+	  appendCancelButton: function(element) {
+	    var cancelButton = document.createElement('button');
+	    cancelButton.className = 'alwaysfullscreencancelbutton';
+
+	    element.appendChild(cancelButton);
+
+	    cancelButton.addEventListener("click", this.cancel);
 	  }
 
 	});
