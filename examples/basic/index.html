@@ -7,47 +7,26 @@
       #fullscreenmask, #mask {
         color:#fff;
         text-align:center;
-        padding-top: 20px;
-        font-size:36px;
-        font-family: Georgia;
+        font-size:3vh;
+        font-family: Roboto, Arial;
       }
 
       #fullscreenmask:before {
-        content: 'Click/Tap to go Fullscreen!';
+        content: 'Click/Tap for Fullscreen';
+        position: relative;
+        top: 30%;
       }
 
       #mask:before {
-        content: 'Scroll down to go Fullscreen!';
+        content: 'Scroll Down for Fullscreen';
+        position: relative;
+        top: 30%;
       }
 
       body {
         margin:0;
       }
 
-      .alwaysfullscreencancelbutton:before {
-        content: 'Cancel';
-      }
-
-      .alwaysfullscreencancelbutton {
-        position:relative;
-        bottom:20px;
-        width:70px;
-        height:50px;
-        background-color:#000;
-        text-align:center;
-        display:block;
-        margin:50px auto;
-        color:#fff;
-      }
-
-      #fullscreenbutton:before {
-        content: 'Go Fullscreen';
-      }
-
-      #fullscreenbutton {
-        background-color:#000;
-        color:#fff;
-      }
     </style>
   </head>
   <body>
