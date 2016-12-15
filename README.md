@@ -8,6 +8,16 @@ The component implements the Fullscreen API for Desktop/Android. But since iOS D
 
 Usually Safari/Chrome on iOS will change to the minimal UI when you start scrolling down the page. But since most A-Frame Webapps are not scrollable, this will never happen. Therefore this component provides a scrollable element to activate the minimal UI.
 
+iOS example (using the scroll-mechanism):
+![](http://lab.immersiveweb.ch/assets/aframe-fullscreen-ios.gif)
+
+Android/Desktop example (using the Fullscreen API):
+![](http://lab.immersiveweb.ch/assets/aframe-fullscreen-android.gif)
+
+Close and Reopen:
+![](http://lab.immersiveweb.ch/assets/aframe-fullscreen-closed.PNG)
+![](http://lab.immersiveweb.ch/assets/aframe-fullscreen-close.PNG)
+
 ### API
 
 | Property | Description | Default Value |
